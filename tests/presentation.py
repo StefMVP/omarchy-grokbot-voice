@@ -36,15 +36,22 @@ class Presentation(unittest.TestCase):
         return [(x, y) for x in range(12, 208) for y in range(10, image.height() - 10)
                 if image.pixelColor(x, y).name() == "#f69412"]
 
-    def test_silence_is_a_flat_line_and_speech_uses_the_panel_height(self):
+    def test_speech_scrolls_through_to_a_flat_silence_line(self):
         pixels = self.wave_pixels()
         self.assertGreaterEqual(len({x for x, _ in pixels}), 190)
         self.assertLessEqual(len({y for _, y in pixels}), 2)
         self.card.setProperty("peak", 0.5)
         QTest.qWait(600)
-        self.assertGreaterEqual(len({y for _, y in self.wave_pixels()}), 50)
+        speech_pixels = self.wave_pixels()
+        self.assertGreaterEqual(len({y for _, y in speech_pixels}), 50)
+        speech_edge = max(x for x, y in speech_pixels if abs(y - self.card.height() / 2) >= 10)
         self.card.setProperty("peak", 0)
         QTest.qWait(150)
+        tail_pixels = self.wave_pixels()
+        self.assertGreaterEqual(len({y for _, y in tail_pixels}), 50)
+        tail_edge = max(x for x, y in tail_pixels if abs(y - self.card.height() / 2) >= 10)
+        self.assertLess(tail_edge, speech_edge - 24)
+        QTest.qWait(650)
         self.assertLessEqual(len({y for _, y in self.wave_pixels()}), 2)
 
     def test_hangup_fires_on_press_before_release(self):
