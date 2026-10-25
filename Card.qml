@@ -48,9 +48,9 @@ Rectangle {
         running: card.visible && card.waveVisible
         onTriggered: {
             var level = Call.voiceLevel(card.peak, card.noiseFloorDb, card.peakDb)
-            if (level === 0 && card.silentFrames >= 4) return
+            if (level === 0 && card.silentFrames >= card.levels.length) return
             card.silentFrames = level === 0 ? card.silentFrames + 1 : 0
-            card.levels = card.silentFrames >= 4 ? Array(31).fill(0) : card.levels.slice(1).concat([level])
+            card.levels = card.levels.slice(1).concat([level])
         }
     }
 
