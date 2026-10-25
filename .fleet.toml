@@ -1,0 +1,5 @@
+[workspace]
+worktrees = ".worktrees"
+
+[checks]
+commands = [["bash", "tests/check.sh"]]

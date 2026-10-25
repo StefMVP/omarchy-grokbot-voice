@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 1,
+  "id": "grokbot.voice",
+  "name": "Grok Bot Voice",
+  "version": "1.0.0",
+  "author": "StefMVP",
+  "license": "MIT",
+  "description": "Control Grok Bot voice calls from a hotkey without changing keyboard focus.",
+  "kinds": ["menu"],
+  "keepLoaded": true,
+  "entryPoints": { "menu": "Menu.qml" }
+}

@@ -1,0 +1,5 @@
+node_modules/
+.worktrees/
+reports/
+tests/out/
+__pycache__/

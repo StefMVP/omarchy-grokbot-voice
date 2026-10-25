@@ -1,0 +1,8 @@
+#!/usr/bin/env node
+import { startServer } from "../lib/server.mjs";
+import { configStore } from "../lib/config.mjs";
+import { Driver } from "../lib/driver.mjs";
+
+const driver = new Driver(configStore());
+try { await startServer(driver); }
+catch (error) { console.error(error.message); driver.close(); process.exitCode = 1; }
