@@ -1,0 +1,35 @@
+#!/bin/bash
+set -euo pipefail
+SELF=$(readlink -f "${BASH_SOURCE[0]}")
+ROOT=${SELF%/bin/*}
+case "${1:---help}" in
+  talk|toggle|call|hangup|mute|show|state) omarchy-shell grokbot.voice "$1" ;;
+  status|select|ping|shutdown) exec "$ROOT/bin/grokbot-voice-call" "$1" ;;
+  doctor)
+    omarchy plugin validate "$ROOT"
+    omarchy-shell grokbot.voice ping
+    exec "$ROOT/bin/grokbot-voice-call" doctor
+    ;;
+  install|uninstall|setup) exec node "$ROOT/lib/install.mjs" "$@" ;;
+  -h|--help)
+    cat <<'HELP'
+Usage: grokbot-voice <command>
+
+  talk | toggle       Start or end a call through the pill
+  call | hangup       Start or end a call
+  mute                Toggle the microphone
+  show | state        Show the pill or read its state
+  status | select     Read app state or open the configured bot
+  doctor              Check the plugin and the app connection
+  ping | shutdown     Check or stop the background driver
+  install             Link and enable this checkout; link the CLI
+  uninstall           Disable the plugin and remove its links; keep source/config
+  setup hyprland KEY  Bind KEY (for example, 'SUPER + grave')
+
+Settings: $GROKBOT_VOICE_CONFIG or $XDG_CONFIG_HOME/grokbot-voice/config.json
+Links:    $GROKBOT_VOICE_BIN_DIR or ~/.local/bin
+Runtime:  $GROKBOT_VOICE_RUNTIME or $XDG_RUNTIME_DIR/grokbot-voice
+HELP
+    ;;
+  *) echo "Unknown command: $1" >&2; exit 2 ;;
+esac

@@ -1,0 +1,40 @@
+#!/bin/bash
+set -euo pipefail
+SELF=$(readlink -f "${BASH_SOURCE[0]}")
+DIR=${SELF%/*}
+RUNTIME=${GROKBOT_VOICE_RUNTIME:-${XDG_RUNTIME_DIR:+$XDG_RUNTIME_DIR/grokbot-voice}}
+RUNTIME=${RUNTIME:-/tmp/grokbot-voice-$UID}
+SOCK=$RUNTIME/call.sock
+cmd=${1:-status}
+case "$cmd" in
+  ping|settings|start|stop|status|select|mute|doctor|shutdown) ;;
+  *) printf '{"ok":false,"error":"Unknown command"}\n'; exit 2 ;;
+esac
+request() {
+  printf '{"cmd":"%s"}\n' "$cmd" | socat -T 11 -t 11 - "UNIX-CONNECT:$SOCK${1:-}"
+}
+start_daemon() {
+  (umask 077; mkdir -p "$RUNTIME")
+  [[ ! -L $RUNTIME && $(stat -c "%u:%a" "$RUNTIME") == "$UID:700" ]] || return 1
+  (
+    flock -w 3 9
+    node "$DIR/grokbot-voice-daemon" >"$RUNTIME/daemon.log" 2>&1 9>&- &
+    request ',retry=30,interval=0.05'
+  ) 9>"$RUNTIME/start.lock"
+}
+result=0
+if [[ ! -S "$SOCK" ]]; then
+  line=$(start_daemon 2>&1) || result=$?
+else
+  line=$(request 2>&1) || result=$?
+  if [[ $result != 0 && $line == *'Connection refused'* ]]; then
+    result=0
+    line=$(start_daemon 2>&1) || result=$?
+  fi
+fi
+if [[ $result != 0 || $line != '{'* ]]; then
+  printf '{"ok":false,"error":"Call daemon did not answer; check its runtime log"}\n'
+  exit 1
+fi
+printf '%s\n' "$line"
+[[ $line != *'"ok":false'* ]]
