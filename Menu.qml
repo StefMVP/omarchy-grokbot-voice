@@ -17,7 +17,7 @@ Item {
     property var session: Call.initial()
     property real seconds: 0
     property string processBinary: ""
-    property var audioConfig: ({ enabled: true, noiseFloorDb: -48 })
+    property var audioConfig: ({ enabled: true, noiseFloorDb: -48, peakDb: -24 })
 
     FileView {
         path: root.configPath
@@ -76,7 +76,7 @@ Item {
     Timer {
         interval: root.session.status === "live" && root.session.audio === "pending" ? 200 : 500
         repeat: true
-        running: root.session.opened && root.session.status !== "ended"
+        running: root.session.opened
         onTriggered: {
             if (startProc.running || stopProc.running || muteProc.running || statusProc.running) return
             statusProc.token = root.session.generation
@@ -124,6 +124,7 @@ Item {
     IpcHandler {
         target: "grokbot.voice"
         function ping(): string { return "ok" }
+        function version(): string { return Call.version() }
         function talk(): string { root.toggle(); return "ok" }
         function toggle(): string { root.toggle(); return "ok" }
         function call(): string { root.start(); return "ok" }
@@ -140,7 +141,7 @@ Item {
     }
     PanelWindow {
         id: win
-        visible: root.session.opened
+        visible: root.session.opened && ["calling", "live", "error"].indexOf(root.session.status) >= 0
         anchors.top: root.config.position === "top"
         anchors.bottom: root.config.position !== "top"
         anchors.left: true
@@ -163,6 +164,7 @@ Item {
             seconds: root.seconds
             peak: voice.peak
             noiseFloorDb: root.audioConfig.noiseFloorDb
+            peakDb: root.audioConfig.peakDb
             errorText: root.session.error
             surface: Commons.Color.background
             text: Commons.Color.foreground

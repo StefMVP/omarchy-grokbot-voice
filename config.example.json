@@ -1,6 +1,6 @@
 {
   "bot": { "agentId": "YOUR_AGENT_ID" },
   "app": { "debugPort": 9222, "processBinary": "grok-bot" },
-  "audio": { "enabled": true, "readyTimeoutMs": 2500, "noiseFloorDb": -48 },
+  "audio": { "enabled": true, "readyTimeoutMs": 2500, "noiseFloorDb": -48, "peakDb": -24 },
   "call": { "position": "bottom", "margin": 28 }
 }

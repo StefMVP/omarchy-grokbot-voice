@@ -3,13 +3,9 @@ set -euo pipefail
 SELF=$(readlink -f "${BASH_SOURCE[0]}")
 ROOT=${SELF%/bin/*}
 case "${1:---help}" in
-  talk|toggle|call|hangup|mute|show|state) omarchy-shell grokbot.voice "$1" ;;
+  talk|toggle|call|hangup|mute|show|state|version) omarchy-shell grokbot.voice "$1" ;;
   status|select|ping|shutdown) exec "$ROOT/bin/grokbot-voice-call" "$1" ;;
-  doctor)
-    omarchy plugin validate "$ROOT"
-    omarchy-shell grokbot.voice ping
-    exec "$ROOT/bin/grokbot-voice-call" doctor
-    ;;
+  doctor|reload) exec node "$ROOT/lib/lifecycle.mjs" "$1" ;;
   install|uninstall|setup) exec node "$ROOT/lib/install.mjs" "$@" ;;
   -h|--help)
     cat <<'HELP'
@@ -20,7 +16,9 @@ Usage: grokbot-voice <command>
   mute                Toggle the microphone
   show | state        Show the pill or read its state
   status | select     Read app state or open the configured bot
-  doctor              Check the plugin and the app connection
+  doctor              Check the loaded version and app connection
+  reload              Restart the shell and verify the loaded version
+  version             Read the loaded plugin version
   ping | shutdown     Check or stop the background driver
   install             Link and enable this checkout; link the CLI
   uninstall           Disable the plugin and remove its links; keep source/config

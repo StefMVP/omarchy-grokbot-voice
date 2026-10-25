@@ -93,3 +93,50 @@ if [[ $FAIL_ENABLE == 1 && $* == 'plugin enable grokbot.voice' ]]; then exit 7; 
         assert.match(readFileSync(log, "utf8"), /plugin enable grokbot.voice/);
     } finally { rmSync(directory, { recursive: true, force: true }); }
 });
+
+test("doctor rejects cached QML and reload verifies its replacement without interrupting a call", async () => {
+    const directory = mkdtempSync(join(tmpdir(), "grokbot-reload-"));
+    const tools = join(directory, "tools");
+    mkdirSync(tools);
+    const fake = await fakeCdp();
+    const config = join(directory, "config.json");
+    const loaded = join(directory, "loaded-version");
+    const commands = join(directory, "commands.log");
+    const expected = JSON.parse(readFileSync(join(root, "manifest.json"), "utf8")).version;
+    writeFileSync(config, JSON.stringify({ bot: { agentId: "example-agent" }, app: { debugPort: fake.port }, audio: { enabled: false } }));
+    writeFileSync(loaded, "0.0.0");
+    writeFileSync(join(tools, "omarchy-shell"), `#!/bin/bash
+case "$2" in
+  state) printf '{"mayBeLive":%s}\\n' "\${TEST_CALL_LIVE:-false}" ;;
+  version) cat "$TEST_LOADED_VERSION" ;;
+esac
+`, { mode: 0o755 });
+    writeFileSync(join(tools, "omarchy"), `#!/bin/bash
+printf '%s\\n' "$*" >> "$TEST_COMMANDS"
+if [[ $* == 'restart shell' ]]; then printf '%s' "$TEST_EXPECTED_VERSION" > "$TEST_LOADED_VERSION"; fi
+`, { mode: 0o755 });
+    const env = { ...process.env, PATH: tools + ":" + process.env.PATH, GROKBOT_VOICE_CONFIG: config, GROKBOT_VOICE_RUNTIME: directory,
+        TEST_LOADED_VERSION: loaded, TEST_EXPECTED_VERSION: expected, TEST_COMMANDS: commands };
+    const cli = join(root, "bin/grokbot-voice");
+    try {
+        const stale = await run(cli, ["doctor"], env);
+        assert.equal(stale.code, 1);
+        assert.match(stale.stderr, /Loaded plugin is stale/);
+        const reloaded = await run(cli, ["reload"], env);
+        assert.equal(reloaded.code, 0, reloaded.stderr);
+        assert.equal(readFileSync(loaded, "utf8"), expected);
+        assert.equal(readFileSync(commands, "utf8"), "restart shell\n");
+        const doctor = await run(cli, ["doctor"], env);
+        assert.equal(doctor.code, 0, doctor.stderr);
+        assert.match(doctor.stdout, /GrokBot\/0.75.3/);
+        const before = readFileSync(commands, "utf8");
+        assert.equal((await run(cli, ["reload"], { ...env, TEST_CALL_LIVE: "true" })).code, 1);
+        fake.page.setPhase("live");
+        assert.equal((await run(cli, ["reload"], env)).code, 1);
+        assert.equal(readFileSync(commands, "utf8"), before);
+    } finally {
+        await run(join(root, "bin/grokbot-voice-call"), ["shutdown"], env);
+        await fake.close();
+        rmSync(directory, { recursive: true, force: true });
+    }
+});
