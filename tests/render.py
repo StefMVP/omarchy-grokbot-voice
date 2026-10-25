@@ -13,7 +13,7 @@ from PySide6.QtGui import QColor, QGuiApplication, QImage, QPainter
 from PySide6.QtQuick import QQuickView
 from PySide6.QtTest import QTest
 
-WIDTH = 312
+WIDTH = 400
 PAD = 20
 GAP = 16
 BG = QColor("#101315")
@@ -31,7 +31,7 @@ BASE = {
 
 STATES = [
     {"status": "calling", "connecting": True, "dots": 2},
-    {"status": "live", "seconds": 12, "peak": 0.5},
+    {"status": "live", "seconds": 12, "peak": 0.35},
     {"status": "live", "seconds": 3, "connecting": True, "dots": 1},
     {"status": "live", "seconds": 47, "muted": True},
     {"status": "live", "audioUnavailable": True},
@@ -55,7 +55,7 @@ def render(app: QGuiApplication, card_path: Path) -> list[QImage]:
         for key, value in state.items():
             root.setProperty(key, value)
         view.setResizeMode(QQuickView.SizeRootObjectToView)
-        view.resize(WIDTH, 68)
+        view.resize(WIDTH, 84)
         view.show()
         QTest.qWait(240)
         shots.append(view.grabWindow())

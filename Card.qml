@@ -13,7 +13,9 @@ Rectangle {
     property int dots: 0
     property real peak: 0
     property real noiseFloorDb: -48
-    property var levels: [0, 0, 0, 0, 0, 0, 0, 0, 0]
+    property real peakDb: -24
+    property int silentFrames: 0
+    property var levels: Array(31).fill(0)
     property real seconds: 0
     property string errorText: ""
 
@@ -32,19 +34,24 @@ Rectangle {
     readonly property int gap: 10
     readonly property bool waveVisible: status === "live" && !connecting && !audioUnavailable
 
-    implicitWidth: 312
-    implicitHeight: 68
-    radius: 34
+    implicitWidth: 400
+    implicitHeight: 84
+    radius: 42
     color: surface
     border.width: 1
     border.color: "#10f5f5f5"
 
-    onWaveVisibleChanged: levels = [0, 0, 0, 0, 0, 0, 0, 0, 0]
+    onWaveVisibleChanged: levels = Array(31).fill(0)
     Timer {
-        interval: 40
+        interval: 16
         repeat: true
         running: card.visible && card.waveVisible
-        onTriggered: card.levels = card.levels.slice(1).concat([Call.voiceLevel(card.peak, card.noiseFloorDb)])
+        onTriggered: {
+            var level = Call.voiceLevel(card.peak, card.noiseFloorDb, card.peakDb)
+            if (level === 0 && card.silentFrames >= 4) return
+            card.silentFrames = level === 0 ? card.silentFrames + 1 : 0
+            card.levels = card.silentFrames >= 4 ? Array(31).fill(0) : card.levels.slice(1).concat([level])
+        }
     }
 
     Timer {
@@ -61,44 +68,30 @@ Rectangle {
         spacing: card.gap
 
         Item {
-            implicitWidth: 36
-            implicitHeight: 36
-            Shape {
-                anchors.centerIn: parent
-                width: 32
-                height: 32
-                opacity: card.connecting ? 0.5 : 1
-                ShapePath {
-                    strokeColor: card.ink
-                    strokeWidth: 2.5
-                    fillColor: "transparent"
-                    capStyle: ShapePath.RoundCap
-                    PathSvg { path: "M7 12v8M13 6v20M19 9v14M25 13v6" }
-                }
-            }
-        }
-
-        Item {
-            implicitWidth: 96
-            implicitHeight: 28
+            implicitWidth: 196
+            implicitHeight: 56
             visible: card.waveVisible
 
+            Rectangle {
+                anchors.centerIn: parent
+                width: parent.width
+                height: 2
+                radius: 1
+                color: card.ink
+            }
             Row {
                 anchors.centerIn: parent
-                spacing: 7
-
+                spacing: 3
                 Repeater {
-                    model: 9
-
+                    model: 31
                     Rectangle {
                         width: 3
                         radius: 1.5
                         color: card.ink
-                        implicitHeight: 3 + 25 * (card.levels[index] || 0)
+                        implicitHeight: 2 + 54 * (card.levels[index] || 0)
                         anchors.verticalCenter: parent.verticalCenter
-
                         Behavior on implicitHeight {
-                            NumberAnimation { duration: 40; easing.type: Easing.OutQuad }
+                            NumberAnimation { duration: 24; easing.type: Easing.OutQuad }
                         }
                     }
                 }
@@ -216,7 +209,7 @@ Rectangle {
             MouseArea {
                 anchors.fill: parent
                 cursorShape: Qt.PointingHandCursor
-                onClicked: card.hangUp()
+                onPressed: card.hangUp()
             }
         }
     }

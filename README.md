@@ -47,10 +47,12 @@ must match the launcher. `call.position` is `top` or `bottom`;
 `call.margin` is in pixels.
 
 The wave follows the call audio through PipeWire. `audio.noiseFloorDb` sets
-the silence threshold. Increase it to reject more background noise. The stream
+the silence threshold; `audio.peakDb` sets the level for full-height peaks. The stream
 check uses `pw-dump` and `app.processBinary`. Set `audio.enabled` to `false`
 to disable the wave and stream check. If the pill
 shows Check app audio, check the microphone and output in Grok Bot.
+
+After an update, end the call and run `grokbot-voice reload`.
 
 ## Remove
 

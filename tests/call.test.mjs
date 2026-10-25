@@ -45,12 +45,12 @@ test("driver reply parsing and duration handle incomplete data", () => {
 
 test("voice level rejects silence and background noise, tracks loudness and stays bounded", () => {
     const peak = (db) => Math.pow(10, db / 60);
-    for (const value of [0, -1, NaN, Infinity, peak(-60)]) assert.equal(call.voiceLevel(value, -48), 0);
-    assert.ok(call.voiceLevel(peak(-48), -48) < 1e-12);
-    const quiet = call.voiceLevel(peak(-36), -48);
-    const speech = call.voiceLevel(peak(-18), -48);
-    assert.ok(quiet > 0 && speech > quiet && speech < 1);
-    assert.ok(call.voiceLevel(peak(-6), -48) > 1 - 1e-12);
-    assert.equal(call.voiceLevel(2, -48), 1);
-    assert.equal(call.voiceLevel(peak(-36), -30), 0);
+    for (const value of [0, -1, NaN, Infinity, peak(-60)]) assert.equal(call.voiceLevel(value, -48, -24), 0);
+    assert.ok(call.voiceLevel(peak(-48), -48, -24) < 1e-12);
+    const quiet = call.voiceLevel(peak(-36), -48, -24);
+    const speech = call.voiceLevel(peak(-27), -48, -24);
+    assert.ok(quiet > 0.4 && speech > quiet && speech < 1);
+    assert.ok(call.voiceLevel(peak(-24), -48, -24) > 1 - 1e-12);
+    assert.equal(call.voiceLevel(2, -48, -24), 1);
+    assert.equal(call.voiceLevel(peak(-36), -30, -24), 0);
 });
