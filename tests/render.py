@@ -31,12 +31,10 @@ BASE = {
 
 STATES = [
     {"status": "calling", "connecting": True, "dots": 2},
-    {"status": "live", "seconds": 12, "connecting": False},
+    {"status": "live", "seconds": 12, "peak": 0.5},
     {"status": "live", "seconds": 3, "connecting": True, "dots": 1},
     {"status": "live", "seconds": 47, "muted": True},
-    {"status": "stopping", "connecting": True},
     {"status": "live", "audioUnavailable": True},
-    {"status": "ended"},
     {"status": "error", "errorText": "debug port closed"},
 ]
 

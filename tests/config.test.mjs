@@ -6,7 +6,7 @@ import { join } from "node:path";
 import { configPath, configStore, requireBot, validateConfig } from "../lib/config.mjs";
 
 test("configuration rejects invalid types, unknown keys and unconfigured bots", () => {
-    for (const value of [null, [], { bot: null }, { call: { margin: "28" } }, { call: { margin: -1 } }, { call: { position: "left" } }, { audio: { enabled: "yes" } }, { app: { debugPort: 0 } }, { bot: { agentId: null } }, { debug: true }]) {
+    for (const value of [null, [], { bot: null }, { call: { margin: "28" } }, { call: { margin: -1 } }, { call: { position: "left" } }, { audio: { enabled: "yes" } }, { audio: { noiseFloorDb: -100 } }, { audio: { noiseFloorDb: "-48" } }, { app: { debugPort: 0 } }, { bot: { agentId: null } }, { debug: true }]) {
         assert.throws(() => validateConfig(value));
     }
     assert.throws(() => requireBot(validateConfig({})), /Set bot.agentId/);

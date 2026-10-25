@@ -16,6 +16,8 @@ Item {
     property var config: ({ position: "bottom", margin: 28 })
     property var session: Call.initial()
     property real seconds: 0
+    property string processBinary: ""
+    property var audioConfig: ({ enabled: true, noiseFloorDb: -48 })
 
     FileView {
         path: root.configPath
@@ -32,17 +34,16 @@ Item {
         stdout: StdioCollector { id: settingsOut; waitForEnd: true }
         onExited: {
             var result = Call.parseResult(settingsOut.text)
-            if (result.ok && result.call) root.config = result.call
+            if (result.ok && result.call) {
+                root.config = result.call
+                root.audioConfig = result.audio
+                root.processBinary = result.processBinary
+            }
             else root.session = Call.complete(root.session, "settings", root.session.generation, result, Date.now())
         }
     }
     function finish(command, token, output) {
-        var previous = root.session
-        root.session = Call.complete(previous, command, token, Call.parseResult(output), Date.now())
-        if (root.session !== previous && root.session.status === "ended") {
-            closeSoon.token = root.session.generation
-            closeSoon.restart()
-        }
+        root.session = Call.complete(root.session, command, token, Call.parseResult(output), Date.now())
     }
     Process {
         id: startProc
@@ -88,15 +89,8 @@ Item {
         running: root.session.status === "live"
         onTriggered: root.seconds = (Date.now() - root.session.startedAt) / 1000
     }
-    Timer {
-        id: closeSoon
-        property int token: 0
-        interval: 2200
-        onTriggered: root.session = Call.close(root.session, token)
-    }
     function start() {
         if (startProc.running || stopProc.running || root.session.mayBeLive) return
-        closeSoon.stop()
         root.session = Call.begin(root.session, "start")
         root.seconds = 0
         startProc.token = root.session.generation
@@ -104,7 +98,6 @@ Item {
     }
     function hangup() {
         if (stopProc.running) return
-        closeSoon.stop()
         root.session = Call.begin(root.session, "stop")
         stopProc.token = root.session.generation
         stopProc.running = true
@@ -119,6 +112,7 @@ Item {
         else start()
     }
     function show() {
+        if (stopProc.running) return
         root.session = Object.assign({}, root.session, { opened: true })
         if (!statusProc.running) {
             statusProc.token = root.session.generation
@@ -137,6 +131,12 @@ Item {
         function mute(): string { root.toggleMute(); return "ok" }
         function show(): string { root.show(); return "ok" }
         function state(): string { return JSON.stringify(root.session) }
+    }
+    VoiceLevels {
+        id: voice
+        enabled: root.session.opened && root.session.status === "live" && root.audioConfig.enabled
+        processBinary: root.processBinary
+        muted: root.session.muted
     }
     PanelWindow {
         id: win
@@ -157,10 +157,12 @@ Item {
         Card {
             id: card
             status: root.session.status
-            connecting: root.session.status === "calling" || root.session.status === "stopping" || (root.session.status === "live" && root.session.audio === "pending")
+            connecting: root.session.status === "calling" || (root.session.status === "live" && root.session.audio === "pending")
             audioUnavailable: root.session.audio === "unavailable"
             muted: root.session.muted
             seconds: root.seconds
+            peak: voice.peak
+            noiseFloorDb: root.audioConfig.noiseFloorDb
             errorText: root.session.error
             surface: Commons.Color.background
             text: Commons.Color.foreground

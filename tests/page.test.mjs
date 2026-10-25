@@ -62,6 +62,19 @@ test("failed hang-up does not claim success", async () => {
         assert.equal(result.ok, false);
         assert.match(result.error, /not confirmed/);
         assert.equal((await page.call("status", "", 1)).phase, "live");
+        assert.equal(page.window.getComputedStyle(page.window.document.querySelector("[data-voice-call-popover]")).visibility, "visible");
         assert.equal(page.observers, 0);
+    } finally { page.close(); }
+});
+
+test("hang-up hides native controls while teardown is pending", async () => {
+    const page = app({ initial: "live", stopDelay: 100 });
+    try {
+        const panel = page.window.document.querySelector("[data-voice-call-popover]");
+        const stopping = page.call("stop", "", 1);
+        assert.equal(page.window.getComputedStyle(panel).visibility, "hidden");
+        assert.equal((await page.call("status", "", 1)).phase, "live");
+        assert.equal((await stopping).phase, "idle");
+        assert.equal(page.window.document.documentElement.hasAttribute("data-grokbot-voice-closing"), false);
     } finally { page.close(); }
 });

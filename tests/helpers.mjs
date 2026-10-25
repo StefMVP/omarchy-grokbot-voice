@@ -4,7 +4,7 @@ import { once } from "node:events";
 import { WebSocketServer } from "ws";
 import { installExpression } from "../lib/page.mjs";
 
-export function app({ id = "example-agent", mark = id, initial = "idle", selectDelay = 0, startDelay = 0, ignoreStop = false } = {}) {
+export function app({ id = "example-agent", mark = id, initial = "idle", selectDelay = 0, startDelay = 0, stopDelay = 0, ignoreStop = false } = {}) {
     const dom = new JSDOM(`<!doctype html><body><button data-agent-id aria-label="Example, bot"></button>
       <button aria-label="View conversation details">Example</button><div aria-label="Conversation transcript">Example conversation</div>
       <button aria-label="Start voice chat"></button><button aria-label="Mute"></button><button aria-label="Hang up"></button></body>`, { runScripts: "outside-only" });
@@ -45,7 +45,7 @@ export function app({ id = "example-agent", mark = id, initial = "idle", selectD
         starts++;
         if (startDelay) window.setTimeout(() => setPhase("live"), startDelay); else setPhase("live");
     };
-    window.document.querySelector('[aria-label="Hang up"]').onclick = () => { stops++; if (!ignoreStop) setPhase("idle"); };
+    window.document.querySelector('[aria-label="Hang up"]').onclick = () => { stops++; if (!ignoreStop) { if (stopDelay) window.setTimeout(() => setPhase("idle"), stopDelay); else setPhase("idle"); } };
     window.document.querySelector('[aria-label="Mute"]').onclick = (event) => {
         const button = event.currentTarget;
         button.setAttribute("aria-label", button.getAttribute("aria-label") === "Mute" ? "Unmute" : "Mute");

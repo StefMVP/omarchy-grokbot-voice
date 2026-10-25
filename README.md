@@ -46,8 +46,10 @@ See [config.example.json](config.example.json) for settings. `app.debugPort`
 must match the launcher. `call.position` is `top` or `bottom`;
 `call.margin` is in pixels.
 
-Grok Bot handles audio. The optional PipeWire stream check uses `pw-dump` and
-`app.processBinary`. Set `audio.enabled` to `false` to disable it. If the pill
+The wave follows the call audio through PipeWire. `audio.noiseFloorDb` sets
+the silence threshold. Increase it to reject more background noise. The stream
+check uses `pw-dump` and `app.processBinary`. Set `audio.enabled` to `false`
+to disable the wave and stream check. If the pill
 shows Check app audio, check the microphone and output in Grok Bot.
 
 ## Remove

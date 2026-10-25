@@ -11,6 +11,9 @@ Rectangle {
     property bool connecting: false
     property bool audioUnavailable: false
     property int dots: 0
+    property real peak: 0
+    property real noiseFloorDb: -48
+    property var levels: [0, 0, 0, 0, 0, 0, 0, 0, 0]
     property real seconds: 0
     property string errorText: ""
 
@@ -36,12 +39,12 @@ Rectangle {
     border.width: 1
     border.color: "#10f5f5f5"
 
-    property real tick: 0
+    onWaveVisibleChanged: levels = [0, 0, 0, 0, 0, 0, 0, 0, 0]
     Timer {
-        interval: 90
+        interval: 40
         repeat: true
-        running: card.waveVisible
-        onTriggered: card.tick += 1
+        running: card.visible && card.waveVisible
+        onTriggered: card.levels = card.levels.slice(1).concat([Call.voiceLevel(card.peak, card.noiseFloorDb)])
     }
 
     Timer {
@@ -91,11 +94,11 @@ Rectangle {
                         width: 3
                         radius: 1.5
                         color: card.ink
-                        implicitHeight: 28 * Call.waveHeight(index, card.tick)
+                        implicitHeight: 3 + 25 * (card.levels[index] || 0)
                         anchors.verticalCenter: parent.verticalCenter
 
                         Behavior on implicitHeight {
-                            NumberAnimation { duration: 160; easing.type: Easing.InOutSine }
+                            NumberAnimation { duration: 40; easing.type: Easing.OutQuad }
                         }
                     }
                 }
@@ -134,10 +137,8 @@ Rectangle {
                 text: {
                     if (card.status === "error")
                         return card.errorText.length > 0 ? card.errorText : "No call";
-                    if (card.status === "ended")
-                        return "Ended";
                     if (card.connecting)
-                        return (card.status === "stopping" ? "Ending" : card.status === "calling" ? "Connecting" : "Joining") + "\u2026".repeat(card.dots);
+                        return (card.status === "calling" ? "Connecting" : "Joining") + "\u2026".repeat(card.dots);
                     if (card.audioUnavailable)
                         return "Check app audio";
                     return Call.duration(card.seconds * 1000);
