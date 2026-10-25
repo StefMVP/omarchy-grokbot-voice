@@ -43,7 +43,7 @@ Rectangle {
 
     onWaveVisibleChanged: levels = Array(31).fill(0)
     Timer {
-        interval: 16
+        interval: 20
         repeat: true
         running: card.visible && card.waveVisible
         onTriggered: {
@@ -91,7 +91,7 @@ Rectangle {
                         implicitHeight: 2 + 54 * (card.levels[index] || 0)
                         anchors.verticalCenter: parent.verticalCenter
                         Behavior on implicitHeight {
-                            NumberAnimation { duration: 24; easing.type: Easing.OutQuad }
+                            NumberAnimation { duration: 32; easing.type: Easing.OutQuad }
                         }
                     }
                 }
