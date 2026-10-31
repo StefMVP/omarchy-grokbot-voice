@@ -6,14 +6,7 @@ Start, mute and end Grok Bot voice calls from an Omarchy hotkey without changing
 
 ## Install
 
-Requires Omarchy, Node.js 24 or later, socat and flock. Sign in to Grok Bot,
-then launch it with the local debug port:
-
-```sh
-grok-bot --remote-debugging-port=9222
-```
-
-Add the same argument to your app launcher.
+Requires Omarchy, Node.js 24 or later, socat and flock. Sign in to Grok Bot.
 
 ```sh
 git clone https://github.com/StefMVP/omarchy-grokbot-voice.git
@@ -22,6 +15,11 @@ bin/grokbot-voice install
 mkdir -p "${XDG_CONFIG_HOME:-$HOME/.config}/grokbot-voice"
 cp config.example.json "${XDG_CONFIG_HOME:-$HOME/.config}/grokbot-voice/config.json"
 ```
+
+Grok Bot needs the local debug port at start. `install` adds
+`--remote-debugging-port=9222` to `$XDG_CONFIG_HOME/grok-bot-flags.conf` when
+the file has no debug port. Restart Grok Bot after install. For another port,
+set `app.debugPort` and use the same value in the flags file.
 
 Set `bot.agentId` in the config file. In Grok Bot's DevTools, inspect the bot's
 list button and copy its `data-agent-id` value.

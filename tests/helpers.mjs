@@ -4,9 +4,9 @@ import { once } from "node:events";
 import { WebSocketServer } from "ws";
 import { installExpression } from "../lib/page.mjs";
 
-export function app({ id = "example-agent", mark = id, initial = "idle", selectDelay = 0, startDelay = 0, stopDelay = 0, ignoreStop = false } = {}) {
+export function app({ id = "example-agent", mark = id, initial = "idle", transcript = "Example conversation", selectDelay = 0, startDelay = 0, stopDelay = 0, ignoreStop = false } = {}) {
     const dom = new JSDOM(`<!doctype html><body><button data-agent-id aria-label="Example, bot"></button>
-      <button aria-label="View conversation details">Example</button><div aria-label="Conversation transcript">Example conversation</div>
+      <button aria-label="View conversation details">Example</button><div aria-label="Conversation transcript">${transcript}</div>
       <button aria-label="Start voice chat"></button><button aria-label="Mute"></button><button aria-label="Hang up"></button></body>`, { runScripts: "outside-only" });
     const { window } = dom;
     Object.defineProperty(window.navigator, "userAgent", { value: "GrokBot/0.75.3" });
@@ -37,7 +37,7 @@ export function app({ id = "example-agent", mark = id, initial = "idle", selectD
         window.document.querySelector('[aria-label="View conversation details"]').textContent = "Loading";
         const select = () => {
             window.document.querySelector('[aria-label="View conversation details"]').textContent = "Example";
-            window.document.querySelector('[aria-label="Conversation transcript"]').textContent = "Example conversation";
+            window.document.querySelector('[aria-label="Conversation transcript"]').textContent = transcript;
         };
         if (selectDelay) window.setTimeout(select, selectDelay); else select();
     };
