@@ -1,4 +1,6 @@
 import assert from "node:assert/strict";
+import http from "node:http";
+import { once } from "node:events";
 import { test } from "node:test";
 import { Driver } from "../lib/driver.mjs";
 import { validateConfig } from "../lib/config.mjs";
@@ -36,6 +38,23 @@ test("invalid config edits do not prevent stop through the last valid app connec
         assert.equal((await driver.command("stop")).phase, "idle");
         assert.equal(fake.page.stops, 1);
     } finally { driver.close(); await fake.close(); }
+});
+
+test("driver reports a closed app so the pill can go away", async () => {
+    const probe = http.createServer();
+    probe.listen(0, "127.0.0.1");
+    await once(probe, "listening");
+    const port = probe.address().port;
+    await new Promise((resolve) => probe.close(resolve));
+    const driver = new Driver(() => validateConfig({ bot: { agentId: "example-agent" }, app: { debugPort: port }, audio: { enabled: false } }));
+    try {
+        const status = await driver.command("status");
+        assert.equal(status.ok, false);
+        assert.equal(status.appClosed, true);
+        assert.match(status.error, /debug port/);
+        assert.equal((await driver.command("stop")).appClosed, true);
+        await assert.rejects(driver.command("doctor"), /debug port/);
+    } finally { driver.close(); }
 });
 
 test("driver stop cancels a pending start across the shared CDP connection", async () => {

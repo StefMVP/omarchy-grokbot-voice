@@ -36,9 +36,34 @@ test("QML hides immediately on hang-up and restores controls only when stop fail
     assert.equal(state.mayBeLive, false);
 });
 
+test("QML closes the pill when Grok Bot is stopped or gone", () => {
+    let state = call.begin(call.initial(), "start");
+    state = call.complete(state, "start", state.generation, { ok: true, phase: "live" }, 100);
+    state = call.begin(state, "stop");
+    state = call.complete(state, "stop", state.generation, { ok: false, appClosed: true, error: "Debug port is closed" }, 100);
+    assert.equal(state.opened, false);
+    assert.equal(state.status, "idle");
+    assert.equal(state.mayBeLive, false);
+    assert.equal(state.error, "");
+    state = call.begin(state, "start");
+    state = call.complete(state, "start", state.generation, { ok: false, appClosed: true, error: "Debug port is closed" }, 100);
+    assert.equal(state.opened, false);
+    assert.equal(state.mayBeLive, false);
+    state = call.begin(state, "start");
+    state = call.complete(state, "start", state.generation, { ok: true, phase: "live" }, 100);
+    state = call.begin(state, "stop");
+    state = call.complete(state, "stop", state.generation, { ok: false, error: "Hang-up was not confirmed" }, 100);
+    assert.equal(state.opened, true);
+    state = call.complete(state, "status", state.generation, { ok: false, appClosed: true, error: "Debug port is closed" }, 100);
+    assert.equal(state.opened, false);
+    assert.equal(state.mayBeLive, false);
+});
+
 test("driver reply parsing and duration handle incomplete data", () => {
     for (const input of ["", "null", "[]", "{", "false", '{"ok":false}']) assert.equal(call.parseResult(input).ok, false);
     assert.equal(call.parseResult('{"ok":true,"audio":"unavailable"}').audio, "unavailable");
+    assert.equal(call.parseResult('{"ok":false,"appClosed":true,"error":"Debug port is closed"}').appClosed, true);
+    assert.equal(call.parseResult('{"ok":false,"appClosed":"yes"}').appClosed, false);
     assert.equal(call.duration(61000), "1:01");
     assert.equal(call.duration(-1), "0:00");
 });

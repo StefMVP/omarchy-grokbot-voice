@@ -17,6 +17,14 @@ test("real DOM controls select the configured bot, start, mute and confirm stop"
     } finally { page.close(); }
 });
 
+test("bot selection is confirmed by the conversation header, not the transcript text", async () => {
+    const page = app({ transcript: "You: hello\nExample: hi" });
+    try {
+        assert.equal((await page.call("start", "example-agent", 1)).phase, "live");
+        assert.equal(page.starts, 1);
+    } finally { page.close(); }
+});
+
 for (const initial of ["idle", "live"]) for (const mark of [null, "other-agent"]) {
     test(`identity is required on ${initial} calls with mark ${mark}`, async () => {
         const page = app({ initial, mark });

@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "id": "grokbot.voice",
   "name": "Grok Bot Voice",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "author": "StefMVP",
   "license": "MIT",
   "description": "Control Grok Bot voice calls from a hotkey without changing keyboard focus.",
